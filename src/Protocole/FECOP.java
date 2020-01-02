@@ -1,6 +1,6 @@
 package Protocole;
 
-import DataBase.Utilities.*;
+import DataBase.Utilities.MySqlBean;
 import Request.RequestControlID;
 
 import java.io.FileInputStream;
@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
 
-public class INFOP
+public class FECOP
 {
     private MySqlBean _bdAccess = new MySqlBean();
     private String _passwordBD;
@@ -21,7 +21,7 @@ public class INFOP
     private String _ipBD;
 
     // constructeur
-    public INFOP() {
+    public FECOP() {
 
         try
         {
@@ -56,59 +56,56 @@ public class INFOP
     public RequestControlID AnalyseRequete(RequestControlID request, String _separator, String _endOfLine) {
 
         RequestControlID response_commande = new RequestControlID();
-        response_commande.setType(request.getType());
 
         switch(request.getType()){
             case RequestControlID.REQUEST_INFO_COURS:
 
-                int nbMonnDiff = 0;
-                ArrayList<String> list_noms_mon = new ArrayList<>();
-                ArrayList<String> list_cours_mon = new ArrayList<>();
-
-                try
-                {
-                    // 1. Recup infos sur nombre et chaque monnaie
-                    String reqSqlInfosMonaies = "select * from cours_monetaires";
-                    ResultSet rs = _bdAccess.SelectQuery(reqSqlInfosMonaies);
-
-                    while(rs.next())
-                    {
-                        nbMonnDiff++;
-
-                        String nom_monnaie = rs.getString("nom_monnaie");
-                        String cours_monnaie = rs.getString("cours_monnaie");
-
-                        System.out.println(rs.getString("nom_monnaie")
-                                + " - " + rs.getString("cours_monnaie"));
-
-                        list_noms_mon.add(nom_monnaie);
-                        list_cours_mon.add(cours_monnaie);
-                    }
-
-
-                    // construire reponse au client
-                    response_commande.setResult("ACK");
-                    String arguments = nbMonnDiff + _separator;
-
-                    for(int i = 0; i < list_noms_mon.size(); i++)
-                    {
-                        arguments += list_noms_mon.get(i) + "|" + list_cours_mon.get(i);
-                        arguments += _separator;
-
-                    }
-                    response_commande.setData(arguments);
-
-
-
-                } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+//                int nbMonnDiff = 0;
+//                ArrayList<String> list_noms_mon = new ArrayList<>();
+//                ArrayList<String> list_cours_mon = new ArrayList<>();
+//
+//                try
+//                {
+//                    // 1. Recup infos sur nombre et chaque monnaie
+//                    String reqSqlInfosMonaies = "select * from cours_monetaires";
+//                    ResultSet rs = _bdAccess.SelectQuery(reqSqlInfosMonaies);
+//
+//                    while(rs.next())
+//                    {
+//                        nbMonnDiff++;
+//
+//                        String nom_monnaie = rs.getString("nom_monnaie");
+//                        String cours_monnaie = rs.getString("cours_monnaie");
+//
+//                        System.out.println(rs.getString("nom_monnaie")
+//                                + " - " + rs.getString("cours_monnaie"));
+//
+//                        list_noms_mon.add(nom_monnaie);
+//                        list_cours_mon.add(cours_monnaie);
+//                    }
+//
+//
+//                    // construire reponse au client
+//                    response_commande = "ACK" + _separator + nbMonnDiff;
+//
+//                    for(int i = 0; i < list_noms_mon.size(); i++)
+//                    {
+//                        response_commande += _separator;
+//                        response_commande += list_noms_mon.get(i) + "|" + list_cours_mon.get(i);
+//
+//                    }
+//
+//
+//
+//                } catch (SQLException e1) {
+//                    e1.printStackTrace();
+//                }
                 break;
 
             default :
 
                 response_commande.setType(RequestControlID.REQUEST_INCONNU);
-                response_commande.setResult("FAIL");
+                response_commande.setData("FAIL");
                 break;
 
 

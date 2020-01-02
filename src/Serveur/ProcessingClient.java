@@ -1,46 +1,55 @@
 package Serveur;
 
+import Protocole.FECOP;
 import Protocole.INFOP;
+import Request.RequestControlID;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 
 
 public class ProcessingClient implements Runnable {
-    private Socket sock;
-    private PrintWriter writer = null;
-    private BufferedInputStream reader = null;
-    private INFOP protocole;
+    private Socket _socket;
+    private ObjectInputStream ois = null;
+    private ObjectOutputStream oos = null;
+    private INFOP _protocoleINFOP;
+    private FECOP _protocoleFECOP;
+
     private String _separator;
     private String _endOfLine;
 
-    public ProcessingClient(Socket pSock, String _sep, String _eof){
+    public ProcessingClient(Socket pSock, String _sep, String _eof, ObjectOutputStream oos, ObjectInputStream ois){
 
-        sock = pSock;
+        _socket = pSock;
         _separator = _sep;
         _endOfLine = _eof;
-        protocole = new INFOP();
+        _protocoleINFOP = new INFOP();
+        _protocoleFECOP = new FECOP();
+
     }
 
     //Le traitement lancé dans un thread séparé
     public void run(){
         System.out.println("Lancement du traitement de la connexion cliente");
         System.out.println("Thread numero = " + Thread.currentThread().getId());
+
+        try {
+            ois = new ObjectInputStream(_socket.getInputStream());
+            oos = new ObjectOutputStream(_socket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         //tant que la connexion est active, on traite les demandes
-        while(!sock.isClosed()){
+        while(!_socket.isClosed()){
 
             try {
 
-                writer = new PrintWriter(sock.getOutputStream());
-                reader = new BufferedInputStream(sock.getInputStream());
-
                 //On attend la demande du client
-                String response = read();
-                InetSocketAddress remote = (InetSocketAddress)sock.getRemoteSocketAddress();
+                RequestControlID response = read();
+                InetSocketAddress remote = (InetSocketAddress) _socket.getRemoteSocketAddress();
 
                 //On affiche quelques infos, pour le débuggage
                 String debug = "";
@@ -51,16 +60,20 @@ public class ProcessingClient implements Runnable {
                 System.out.println("\n" + debug);
 
                 //On traite la demande du client en fonction de la commande envoyée
-                String toSend = "";
-                toSend = protocole.AnalyseRequete(response, _separator, _endOfLine);
+                RequestControlID toSend;
 
+                if(response.getProtocole().equals("INFOP")){
+                    toSend = _protocoleINFOP.AnalyseRequete(response, _separator, _endOfLine);
+                } else {
+                    toSend = _protocoleFECOP.AnalyseRequete(response, _separator, _endOfLine);
+                }
 
                 //On envoie la réponse au client
-                writer.write(toSend);
+                oos.writeObject(toSend);
+                oos.flush();
                 //Il FAUT IMPERATIVEMENT UTILISER flush()
                 //Sinon les données ne seront pas transmises au client
                 //et il attendra indéfiniment
-                writer.flush();
 
 
             }catch(SocketException e){
@@ -73,13 +86,19 @@ public class ProcessingClient implements Runnable {
     }
 
     //La méthode que nous utilisons pour lire les réponses
-    private String read() throws IOException{
-        String response = "";
-        int stream;
-        byte[] b = new byte[4096];
-        stream = reader.read(b);
-        response = new String(b, 0, stream);
+    private RequestControlID read() throws IOException{
+
+        RequestControlID response = null;
+
+        try {
+            response = (RequestControlID) ois.readObject();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
         return response;
+
+
     }
 
 }

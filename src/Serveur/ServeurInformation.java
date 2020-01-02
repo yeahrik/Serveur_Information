@@ -1,6 +1,8 @@
 package Serveur;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -19,6 +21,8 @@ public class ServeurInformation
     private String _endOfLine;
     private boolean _isRunning = true;
     private int nbThreadMax = 10;
+    private ObjectInputStream ois = null;
+    private ObjectOutputStream oos = null;
     protected ExecutorService threadPool = ///
             Executors.newFixedThreadPool(nbThreadMax);///
 
@@ -53,7 +57,7 @@ public class ServeurInformation
                         System.out.println("Connexion cliente reçue.");
 
                         threadPool.execute(///
-                                new ProcessingClient(client, _separator, _endOfLine));
+                                new ProcessingClient(client, _separator, _endOfLine, oos, ois));
 
 
                     } catch (IOException e) {
