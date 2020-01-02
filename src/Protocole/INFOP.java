@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Properties;
 
 public class INFOP
@@ -48,7 +49,7 @@ public class INFOP
 
         //Connection
         _bdAccess.ConnectDB();
-        System.out.println("Client connecte sur BD_KITCHEN");
+        System.out.println("Client connecte sur BD_FERRIES");
     }
 
     public String AnalyseRequete(String response, String _separator, String _endOfLine) {
@@ -60,35 +61,45 @@ public class INFOP
         String reponse_commande = "FAIL";
 
         switch(requete.toUpperCase()){
-            case "LOGIN":////////////////
-                String username = tok[1];
-                String password = tok[2];
-                String password_bd;
+            case "INFO_COURS":
+
+                int nbMonnDiff = 0;
+                ArrayList<String> list_noms_mon = new ArrayList<>();
+                ArrayList<String> list_cours_mon = new ArrayList<>();
 
                 try
                 {
-                    String reqSql = "select username, password from user where username = '" + username + "'";
-                    System.out.println("Requete : " + reqSql);
-                    ResultSet rs = _bdAccess.SelectQuery(reqSql);
+                    // 1. Recup infos sur nombre et chaque monnaie
+                    String reqSqlInfosMonaies = "select * from cours_monetaires";
+                    ResultSet rs = _bdAccess.SelectQuery(reqSqlInfosMonaies);
 
-                    rs.next();
-
-                    if(rs.getString("username").equals(""))
+                    while(rs.next())
                     {
-                        // user n'existe pas
-                        System.out.println("Cet utilisateur n'existe pas\n");
-                    } else {
-                        password_bd = rs.getString("password");
+                        nbMonnDiff++;
 
-                        if(!password.equals(password_bd))
-                        {
-                            // password incorrect
-                            System.out.println("Mot de passe incorrect\n");
-                        } else {
-                            // OK
-                            reponse_commande = "ACK";
-                        }
+                        String nom_monnaie = rs.getString("nom_monnaie");
+                        String cours_monnaie = rs.getString("cours_monnaie");
+
+                        System.out.println(rs.getString("nom_monnaie")
+                                + " - " + rs.getString("cours_monnaie"));
+
+                        list_noms_mon.add(nom_monnaie);
+                        list_cours_mon.add(cours_monnaie);
                     }
+
+
+                    // construire reponse au client
+                    reponse_commande = "ACK" + _separator + nbMonnDiff;
+
+                    for(int i = 0; i < list_noms_mon.size(); i++)
+                    {
+                        reponse_commande += _separator;
+                        reponse_commande += list_noms_mon.get(i) + "|" + list_cours_mon.get(i);
+
+                    }
+
+
+
                 } catch (SQLException e1) {
                     e1.printStackTrace();
                 }
@@ -100,7 +111,7 @@ public class INFOP
                 break;
         }
 
-        return reponse_commande;
+        return reponse_commande + _endOfLine;
 
     }
 

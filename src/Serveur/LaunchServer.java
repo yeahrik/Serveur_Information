@@ -24,7 +24,7 @@ public class LaunchServer {
             _host = _propFile.getProperty("HOST");
             _separator = _propFile.getProperty("SEPARATOR");
             _endOfLine = _propFile.getProperty("ENDOFLINE");
-            _port = _propFile.getProperty("PORT");
+            _port = _propFile.getProperty("PORT_INFO");
 
             _inStream.close();
         }
